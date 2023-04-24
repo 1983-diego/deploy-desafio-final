@@ -1,26 +1,11 @@
 const knex = require("../conexao")
 const bcrypt = require("bcrypt")
-const joi = require("joi")
 const jwt = require("jsonwebtoken")
 
 const cadastrarUsuario = async (req, res) => {
     const { nome, email, senha } = req.body
 
     try {
-        const schemaUsuario = joi.object({
-            nome: joi.string().required(),
-            email: joi.string().email().required(),
-            senha: joi.string().required()
-        })
-
-        await schemaUsuario.validateAsync({ nome, email, senha })
-
-        const emailRepetido = await knex('usuarios').where({email}).first()
-        
-        if (emailRepetido) {
-            return res.status(400).json({mensagem: "Email já existe no cadastro"})
-        }
-
         const senhaCriptografada = await bcrypt.hash(senha, 10)
 
         const novoUsuario = await knex('usuarios').insert({
@@ -88,21 +73,7 @@ const atualizarUsuario = async (req, res) => {
     const { id } = req.usuario
     const { nome, email, senha } = req.body
 
-    try {
-        const schemaUsuario = joi.object({
-            nome: joi.string().required(),
-            email: joi.string().email().required(),
-            senha: joi.string().required()
-        })
-
-        await schemaUsuario.validateAsync({ nome, email, senha })
-
-        const verificarEmail = await knex('usuarios').where({email}).first()
-        
-        if (verificarEmail && verificarEmail !== req.usuario.email) {
-            return res.status(400).json({mensagem: "O email já consta em nosso cadastro"})
-        }
-        
+    try {    
         const senhaCriptografada = await bcrypt.hash(senha, 10)
 
         await knex('usuarios').where({id}).update({ nome, email, senha: senhaCriptografada })
