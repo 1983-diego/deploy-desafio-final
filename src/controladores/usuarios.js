@@ -6,6 +6,12 @@ const cadastrarUsuario = async (req, res) => {
     const { nome, email, senha } = req.body
 
     try {
+        const emailRepetido = await knex('usuarios').where({email}).first()
+        
+        if (emailRepetido) {
+            return res.status(400).json({mensagem: "Email já existe no cadastro"})
+        }
+
         const senhaCriptografada = await bcrypt.hash(senha, 10)
 
         const novoUsuario = await knex('usuarios').insert({
@@ -52,7 +58,7 @@ const realizarLogin = async (req, res) => {
             token
         })
     } catch (error) {
-        
+        return res.status(500).json({mensagem: error.message})
     }
 }
 
@@ -74,6 +80,12 @@ const atualizarUsuario = async (req, res) => {
     const { nome, email, senha } = req.body
 
     try {    
+        const verificarEmail = await knex('usuarios').where({email}).first()
+        
+        if (verificarEmail && verificarEmail.email !== req.usuario.email) {
+            return res.status(400).json({mensagem: "O email já consta em nosso cadastro"})
+        }
+        
         const senhaCriptografada = await bcrypt.hash(senha, 10)
 
         await knex('usuarios').where({id}).update({ nome, email, senha: senhaCriptografada })
