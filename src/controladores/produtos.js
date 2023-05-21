@@ -1,14 +1,31 @@
 const knex = require("../conexao")
+const aws = require("aws-sdk")
+const endpoint = new aws.Endpoint(process.env.ENDPOINT_S3)
+
+const s3 = new aws.S3({
+    endpoint,
+    credentials: {
+        accessKeyId: process.env.KEY_ID,
+        secretAccessKey: process.env.APP_KEY
+    }
+})
 
 const cadastrarProduto = async (req, res) => {
-    const {descricao, quantidade_estoque, valor, categoria_id} = req.body
+    const {descricao, quantidade_estoque, valor, categoria_id, produto_imagem} = req.body
 
     try {
+        const checarImagemRepetida = await knex('produtos').where('produto_imagem', '=', produto_imagem).first()
+
+        if (checarImagemRepetida && checarImagemRepetida.produto_imagem != null) {
+            return res.status(400).json({mensagem: "Já existe essa imagem atribuída a um produto"})
+        }
+
         const novoProduto = await knex("produtos").insert({
             descricao,
             quantidade_estoque,
             valor,
-            categoria_id
+            categoria_id,
+            produto_imagem
         }).returning("*")
 
         if(!novoProduto) {
@@ -23,14 +40,30 @@ const cadastrarProduto = async (req, res) => {
 
 const atualizarProduto = async (req, res) => {
     const {id} = req.params
-    const {descricao, quantidade_estoque, valor, categoria_id} = req.body
+    const {descricao, quantidade_estoque, valor, categoria_id, produto_imagem} = req.body
 
     try {
+        const produto = await knex('produtos').where({id}).first()
+
+        if(!produto){
+            return res.status(404).json({mensagem: "Produto inexistente"})
+        }
+        
+        if(produto.produto_imagem){
+            const getPath = produto.produto_imagem.split(".com/")[1]
+            
+            await s3.deleteObject({
+                Bucket: process.env.BUCKET,
+                Key: getPath
+            }).promise()
+        }
+
         const editarProduto = await knex('produtos').update({
             descricao,
             quantidade_estoque,
             valor,
-            categoria_id
+            categoria_id,
+            produto_imagem: produto_imagem || null
         }).where({id})
 
         if (!editarProduto) {
@@ -92,6 +125,21 @@ const excluirProduto = async (req, res) => {
         if (!produtoExiste) {
             return res.status(404).json({mensagem: "Produto não encontrado para exclusão."})
         
+        }
+        
+        const verificarPedidos = await knex('pedido_produtos').where('produto_id', '=', id).returning("*")
+
+        if (verificarPedidos.length > 0) {
+            return res.status(400).json({mensagem: 'O produto não pode ser excluído por estar em pelo menos um pedido'})
+        }
+
+        if(produtoExiste.produto_imagem != null){
+            const getPath = produtoExiste.produto_imagem.split(".com/")[1]
+
+            await s3.deleteObject({
+                Bucket: process.env.BUCKET,
+                Key: getPath
+            }).promise()
         }
 
         const produto = await knex('produtos').del().where({id}).returning('id')

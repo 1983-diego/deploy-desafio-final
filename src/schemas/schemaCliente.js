@@ -1,6 +1,6 @@
 const joi = require("joi")
 
-const schemaCadastrarCliente = joi.object({
+const schemaCliente = joi.object({
     nome: joi.string().required(),
     email: joi.string().email().required(),
     cpf: joi.string().min(11).max(11).required(),
@@ -12,4 +12,4 @@ const schemaCadastrarCliente = joi.object({
     estado: joi.string().min(2).max(2)
 })
 
-module.exports = schemaCadastrarCliente
+module.exports = schemaCliente

@@ -44,3 +44,22 @@ create table clientes(
   cidade text,
   estado text
 );
+
+--sprint 3
+create table pedidos(
+  id serial primary key,
+  cliente_id int references clientes(id),
+  observacao text,
+  valor_total int
+);
+
+create table pedido_produtos(
+  id serial primary key,
+  pedido_id int references pedidos(id),
+  produto_id int references produtos(id),
+  quantidade_produto int,
+  valor_produto int
+);
+
+alter table produtos add produto_imagem text;
+
