@@ -12,7 +12,7 @@ const schemaPedido = joi.object({
                 'any.required':'O campo id do produto é obrigatório',
                 'number.base':'O campo id do produto deve ser um número válido'
             }),
-            quantidade_produto: joi.number().required().messages({
+            quantidade_produto: joi.number().min(1).required().messages({
                 'any.required':'O campo quantidade é obrigatório',
                 'number.base':'O campo quantidade deve ser um número válido'
             })
