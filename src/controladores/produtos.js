@@ -1,6 +1,6 @@
 const knex = require("../conexao")
 const aws = require("aws-sdk")
-let endpoint = new aws.Endpoint(process.env.ENDPOINT_S3)
+const endpoint = new aws.Endpoint(process.env.ENDPOINT_S3)
 
 const s3 = new aws.S3({
     endpoint,
